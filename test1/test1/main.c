@@ -11,43 +11,75 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <avr/sfr_defs.h>
 
 #define led_on		PORTD |= (1<<PORTD0);
 #define led_off		PORTD &= ~(1<<PORTD0);
 
-#define led_toggle	PIND |= (1<<PIND0);
+#define led_toggle	PINB |= (1<<PINB0);
 
-#define _BV(bit) (1 << (bit))
+#define _BV(bit) (1 << (bit))  //bit value
 //TCCR2 = _BV(COM20)|_BV(CTC2)|_BV(CS20);
 
 
 #define bit_is_set(sfr,bit) (_SFR_BYTE(sfr) & _BV(bit))
-#define bit_is_clear(sfr,bit) \
-(!(_SFR_BYTE(sfr) & _BV(bit)))
+#define bit_is_clear(sfr,bit) (!(_SFR_BYTE(sfr) & _BV(bit)))
+
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= -_BV(bit))  //clear bit
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))   //set bit
 
 #define STOP_TIMER TCCR0 &= 0b11111000
 #define START_TIMER TCCR0 |= 0b00000011 // prescaler = c/64
 
 typedef volatile unsigned int WORD;
 
-//пїЅпїЅ пїЅпїЅпїЅ
+//кр зел
 //
-//-  пїЅпїЅпїЅ  пїЅпїЅ
-//-  пїЅпїЅпїЅ
-//пїЅпїЅ пїЅпїЅпїЅ
+//-  бел  кл
+//-  син
+//че жел
 
 
 unsigned char digit_to_7segval(unsigned char digit);
-WORD Interrupts=0;;
+void ConfigureDevice(void);
+
+WORD Interrupts=0;
+unsigned int step =0;
 
 ISR(TIMER0_OVF_vect)
 {
 
 	// at 11,0592mhz with a 'Clock/64' prescaler, 675 interrupts = 1 sec!
 	
-	if (Interrupts == 675)
+	
+	
+	if (Interrupts == 10)
 	{
+		if (step==2)
+		{
+			step = 0;
+		}
+		
 		Interrupts = 0;
+		/////////
+		
+		switch(step)
+		{
+			case 0:
+			PORTB |= (1<<PORTB0);
+			PORTB &= ~(1<<PORTB1);
+			break;
+			
+			case 1:
+			PORTB |= (1<<PORTB1);
+			PORTB &= ~(1<<PORTB0);
+			break;
+		}
+		
+		
+		step++;
+		
+		////////
 	}
 	
 	Interrupts++;
@@ -60,6 +92,8 @@ int main(void)
 //TCCR1B |= (1 << CS10)|(1 << CS12);
 DDRD = 0xFF; //|= (1<<DDD0);  //PD0 pin2 out
 //DDRD &= ~(1<<DDD1); //PD1 pin3 in
+
+DDRB |= ((1<<DDB0)|(1<<DDB1)|(1<<DDB2)|(1<<DDB3));
 
 ConfigureDevice();
 
@@ -103,6 +137,7 @@ void ConfigureDevice(void)
 
 	sei(); // unmask interruptions
 }
+
 
 
 
