@@ -12,6 +12,11 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/sfr_defs.h>
+#include "../../00-libfiles/uart.c"
+#include "../../00-libfiles/i2c.c"
+
+#include "lcd_hd44780_avr.c"
+
 
 #define led_on		PORTD |= (1<<PORTD0);
 #define led_off		PORTD &= ~(1<<PORTD0);
@@ -45,6 +50,8 @@ void ConfigureDevice(void);
 
 WORD Interrupts=0;
 unsigned int step =0;
+unsigned char N1 = 0;
+unsigned char N2 = 0;
 
 ISR(TIMER0_OVF_vect)
 {
@@ -53,7 +60,7 @@ ISR(TIMER0_OVF_vect)
 	
 	
 	
-	if (Interrupts == 10)
+	if (Interrupts == 1)
 	{
 		if (step==2)
 		{
@@ -68,11 +75,13 @@ ISR(TIMER0_OVF_vect)
 			case 0:
 			PORTB |= (1<<PORTB0);
 			PORTB &= ~(1<<PORTB1);
+			//PORTD = ~digit_to_7segval(N2);
 			break;
 			
 			case 1:
 			PORTB |= (1<<PORTB1);
 			PORTB &= ~(1<<PORTB0);
+			//PORTD = ~digit_to_7segval(N1);
 			break;
 		}
 		
@@ -85,17 +94,54 @@ ISR(TIMER0_OVF_vect)
 	Interrupts++;
 }
 
+#define MCP4725_ADDR 0x60
 
+unsigned char lookup = 0; //varaible for navigating through the tables
+
+int sintab2[8] =
+{
+	0001, 0500, 1000, 1500, 2000, 3000, 3500, 4095
+};
 
 int main(void)
 {
+	
+	UART_Init(9600);
+	
 //TCCR1B |= (1 << CS10)|(1 << CS12);
-DDRD = 0xFF; //|= (1<<DDD0);  //PD0 pin2 out
+///////////////DDRD = 0xFF; //|= (1<<DDD0);  //PD0 pin2 out
 //DDRD &= ~(1<<DDD1); //PD1 pin3 in
 
-DDRB |= ((1<<DDB0)|(1<<DDB1)|(1<<DDB2)|(1<<DDB3));
+//////////////////DDRB |= ((1<<DDB0)|(1<<DDB1)|(1<<DDB2)|(1<<DDB3));
 
 ConfigureDevice();
+
+I2C_Init();
+
+
+
+UART_Printf("start\n\r");
+	
+	I2C_Start();
+		I2C_Write(0xc0);
+		I2C_Write(0x4);
+		I2C_Write(0x62);
+		I2C_Stop();
+		UART_Printf("test ");
+		
+		
+		
+		   //Initialize LCD module
+		   LCDInit(LS_BLINK|LS_ULINE);
+
+		   //Clear the screen
+		   LCDClear();
+
+		   //Simple string printing
+		   LCDWriteString("Congrats ");
+
+		   //A string on line 2
+		   LCDWriteStringXY(0,1,"Loading ");
 
 while (1)
 	{
@@ -109,12 +155,61 @@ while (1)
 	//led_off;
 	//_delay_ms(500);
 	
+	//UART_Printf("Welcome to AVR Serial Programming by ExploreEmbedded\n\r");
 	
-	for (int i=0; i<=15; i++)
-		{
-			PORTD = ~digit_to_7segval(i);
-			_delay_ms(300);
-		}
+	/*
+	(signed/unsigned) char - 1 byte
+	(signed/unsigned) short - 2 bytes
+	(signed/unsigned) int - 2 bytes
+	(signed/unsigned) long - 4 bytes
+	(signed/unsigned) long long - 8 bytes
+	float - 4 bytes (floating point)
+	double - alias to float
+	*/
+	
+	
+	
+	I2C_Start();
+	I2C_Write(0xc0);
+	I2C_Write(0x4);
+	I2C_Write(lookup);
+	I2C_Stop();
+	
+	char string[8];
+
+	itoa(lookup, string, 10);
+	
+	UART_Printf(string);
+	UART_Printf("\n\r");
+	
+	if (lookup==255)
+	{
+		lookup=0;
+	} 
+	else
+	{
+		lookup++;
+	}
+		
+	
+	
+	/*for (int i = 0; i < 255; i++)
+	{
+		I2C_Start();
+		I2C_Write(i);
+		I2C_Write(64);
+		I2C_Write(sintab2[7] >> 4);
+		I2C_Write((sintab2[7] & 15) << 4);
+		I2C_Stop();
+		//UART_Printf("test ");
+		_delay_ms(30);
+	}*/
+	
+			if (N1==15)	{N1=0; N2++;}
+			if (N2==15)	{N2=0;}
+			_delay_ms(100);
+			N1++;
+	
 	}
 }
 
@@ -139,7 +234,7 @@ void ConfigureDevice(void)
 }
 
 
-
+/*
 
 unsigned char digit_to_7segval(unsigned char digit)
 {
@@ -182,7 +277,9 @@ unsigned char digit_to_7segval(unsigned char digit)
 	return segval;
 }
 
-unsigned char segs[]=
+*/
+
+/*unsigned char segs[]=
 {
 	0b00111111,
 	0b00000110,
@@ -201,3 +298,4 @@ unsigned char segs[]=
 	0x79,
 	0x71
 };
+*/
