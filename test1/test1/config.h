@@ -14,14 +14,14 @@
 	LCD CONNECTIONS
 *************************************************/
 
-#define LCD_DATA C		//Port AVR's PB0-PB3 are connected to LCD's DB4-DB7
+#define LCD_DATA B		//Port AVR's PB0-PB3 are connected to LCD's DB4-DB7
 #define LCD_DATA_POS 0
 
 #define LCD_E B			//Enable/strobe signal (E)-> PB4
 #define LCD_E_POS	PB4	//Position of enable in above port
 
 #define LCD_RS D		//Register Select signal (RS)-> PD3
-#define LCD_RS_POS	PD3
+#define LCD_RS_POS	PD5
 
 #define LCD_RW D		//Read/Write signal (R/W) ->PD6
 #define LCD_RW_POS	PD6
