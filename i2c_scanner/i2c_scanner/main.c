@@ -13,6 +13,9 @@ int main(void)
     /* Replace with your application code */
     while (1) 
     {
+		PORTD=1;
+		PORTD=2;
+		PORTD=3;
     }
 }
 
