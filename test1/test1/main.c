@@ -353,7 +353,7 @@ unsigned char digit_to_7segval(unsigned char digit)
 
 
 /*
-
+режим   частота амплитуда сдвигY сдвигX
 
 
 */
